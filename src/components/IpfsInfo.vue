@@ -1,18 +1,33 @@
 <template>
   <div class="ipfs-info">
-    <img class="ipfs-logo" alt="IPFS logo" src="../assets/logo.svg" />
-    <p>{{ status }}</p>
-    <p>ID: {{ id }}</p>
-    <hr />
     <input v-model="content" />
-    <button v-on:click="create">create</button>
+    <button v-on:click="create">create object ipfs</button>
     <pre>{{ cid }}</pre>
     <br />
     <input v-model="cid" />
     <br />
-    <button v-on:click="read">read</button>
+    <button v-on:click="read">read from ipfs</button>
     <br />
     <pre>{{ contentRead }}</pre>
+
+    <br />
+    <button v-on:click="createOdb">crete db</button>
+    <br />
+    <pre>{{ dbAddress }}</pre>
+
+    <input v-model="key" placeholder="key" />
+    <input v-model="value" placeholder="value" />
+    <button v-on:click="addEntry">crete entry</button>
+
+    <hr />
+
+    <select v-model="keyRead">
+      <option disabled value="">Please select one</option>
+      <option v-for="key in keys" :key="key">{{ key }}</option>
+    </select>
+    <button v-on:click="readEntry">read key</button>
+    <br />
+    <pre>{{ valueRead }}</pre>
   </div>
 </template>
 
@@ -27,12 +42,39 @@ export default {
       cid: '',
       content: '',
       contentRead: '',
+      dbAddress: '',
+      key: '',
+      value: '',
+      keyRead: '',
+      valueRead: '',
+      keys: [],
     }
   },
   mounted: function () {
     this.getIpfsNodeInfo()
   },
   methods: {
+    async createOdb() {
+      const orbitdb = await this.$orbitdb
+      const db = await orbitdb.keyvalue('first-database')
+      this.dbAddress = db.address
+    },
+    async addEntry() {
+      const orbitdb = await this.$orbitdb
+      const db = await orbitdb.keyvalue('first-database')
+      await db.load()
+      console.log('add entry', db)
+      await db.put(this.key, this.value)
+      const all = db.all
+      this.keys = [...Object.keys(all)]
+    },
+    async readEntry() {
+      const orbitdb = await this.$orbitdb
+      const db = await orbitdb.keyvalue('first-database')
+      await db.load()
+      this.valueRead = db.get(this.keyRead)
+      console.log('read entry', { db, valueRead: this.valueRead })
+    },
     async create() {
       const ipfsCidConfig = {
         version: 1,
@@ -55,6 +97,7 @@ export default {
       try {
         // Await for ipfs node instance.
         const ipfs = await this.$ipfs
+        console.log(ipfs._ipfs)
         // Call ipfs `id` method.
         // Returns the identity of the Peer.
         const { agentVersion, id } = await ipfs.id()

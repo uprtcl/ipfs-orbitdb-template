@@ -1,8 +1,12 @@
 import IPFS from 'ipfs'
+import OrbitDB from 'orbit-db'
 
 const plugin = {
   install(Vue, opts = {}) {
-    Vue.prototype.$ipfs = IPFS.create(opts)
+    Vue.prototype.$orbitdb = null
+    Vue.prototype.$ipfs = IPFS.create(opts).then(
+      (ipfs) => (Vue.prototype.$orbitdb = OrbitDB.createInstance(ipfs)),
+    )
   },
 }
 
