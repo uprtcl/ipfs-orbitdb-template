@@ -51,6 +51,12 @@ export default {
       const db = await orbitdb.keyvalue('first-database')
       this.dbAddress = db.address
       this.updateKeys()
+      this.pinnerUrl = 'http://localhost:3000'
+      fetch(`${this.pinnerUrl}/pin?address=${this.dbAddress}`, {
+        method: 'GET',
+      }).then((response) => {
+        console.log(response)
+      })
     },
     async updateKeys() {
       const orbitdb = await this.$orbitdb
