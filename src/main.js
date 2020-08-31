@@ -15,7 +15,7 @@ const jsConfig = {
       ],
     },
     Bootstrap: [
-      '/ip4/192.168.1.13/tcp/4002/p2p/QmY2Sqz9K6VEZaw3jAGhYNzciWV6WJkhYHK8PvCSF9VFpE',
+      '/ip4/192.168.1.13/tcp/4003/ws/p2p/QmY2Sqz9K6VEZaw3jAGhYNzciWV6WJkhYHK8PvCSF9VFpE',
     ],
   },
 }
