@@ -1,16 +1,7 @@
 <template>
   <div class="ipfs-info">
-    <input v-model="content" />
-    <button v-on:click="create">create object ipfs</button>
-    <pre>{{ cid }}</pre>
-    <br />
-    <input v-model="cid" />
-    <br />
-    <button v-on:click="read">read from ipfs</button>
-    <br />
-    <pre>{{ contentRead }}</pre>
-
-    <br />
+    <input v-model="dbAddress" placeholder="db address" />
+    or
     <button v-on:click="createOdb">crete db</button>
     <br />
     <pre>{{ dbAddress }}</pre>
@@ -21,6 +12,7 @@
 
     <hr />
 
+    <button v-on:click="updateKeys">update keys</button>
     <select v-model="keyRead">
       <option disabled value="">Please select one</option>
       <option v-for="key in keys" :key="key">{{ key }}</option>
@@ -58,19 +50,26 @@ export default {
       const orbitdb = await this.$orbitdb
       const db = await orbitdb.keyvalue('first-database')
       this.dbAddress = db.address
+      this.updateKeys()
     },
-    async addEntry() {
+    async updateKeys() {
       const orbitdb = await this.$orbitdb
-      const db = await orbitdb.keyvalue('first-database')
+      const db = await orbitdb.open(this.dbAddress)
       await db.load()
-      console.log('add entry', db)
-      await db.put(this.key, this.value)
       const all = db.all
       this.keys = [...Object.keys(all)]
     },
+    async addEntry() {
+      const orbitdb = await this.$orbitdb
+      const db = await orbitdb.open(this.dbAddress)
+      await db.load()
+      console.log('add entry', db)
+      await db.put(this.key, this.value)
+      this.updateKeys()
+    },
     async readEntry() {
       const orbitdb = await this.$orbitdb
-      const db = await orbitdb.keyvalue('first-database')
+      const db = await orbitdb.open(this.dbAddress)
       await db.load()
       this.valueRead = db.get(this.keyRead)
       console.log('read entry', { db, valueRead: this.valueRead })
