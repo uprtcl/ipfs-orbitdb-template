@@ -3,8 +3,9 @@
     <input v-model="dbAddress" placeholder="db address" />
     or
     <button v-on:click="createOdb">crete db</button>
+    <button v-on:click="checkIncluded">check included</button>
     <br />
-    <pre>{{ dbAddress }}</pre>
+    <pre>{{ JSON.stringify({ address: dbAddress, includes }, 0, 2) }}</pre>
 
     <input v-model="key" placeholder="key" />
     <input v-model="value" placeholder="value" />
@@ -24,99 +25,111 @@
 </template>
 
 <script>
+const pinnerUrl = "http://localhost:3000";
+
 export default {
-  name: 'IpfsInfo',
+  name: "IpfsInfo",
   data: function () {
     return {
-      status: 'Connecting to IPFS...',
-      id: '',
-      agentVersion: '',
-      cid: '',
-      content: '',
-      contentRead: '',
-      dbAddress: '',
-      key: '',
-      value: '',
-      keyRead: '',
-      valueRead: '',
+      status: "Connecting to IPFS...",
+      id: "",
+      agentVersion: "",
+      cid: "",
+      content: "",
+      contentRead: "",
+      dbAddress: "",
+      key: "",
+      value: "",
+      keyRead: "",
+      valueRead: "",
       keys: [],
-    }
+      includes: undefined,
+    };
   },
   mounted: function () {
-    this.getIpfsNodeInfo()
+    this.getIpfsNodeInfo();
   },
   methods: {
     async createOdb() {
-      const orbitdb = await this.$orbitdb
-      const db = await orbitdb.keyvalue('first-database')
-      this.dbAddress = db.address
-      this.updateKeys()
-      this.pinnerUrl = 'http://localhost:3000'
-      fetch(`${this.pinnerUrl}/pin?address=${this.dbAddress}`, {
-        method: 'GET',
-      }).then((response) => {
-        console.log(response)
-      })
+      const orbitdb = await this.$orbitdb;
+      const db = await orbitdb.keyvalue("first-database");
+      this.updateKeys();
+      await fetch(`${pinnerUrl}/pin?address=${this.dbAddress}`, {
+        method: "GET",
+      });
+      this.dbAddress = db.address;
     },
     async updateKeys() {
-      const orbitdb = await this.$orbitdb
-      const db = await orbitdb.open(this.dbAddress)
-      await db.load()
-      const all = db.all
-      this.keys = [...Object.keys(all)]
+      const orbitdb = await this.$orbitdb;
+      const db = await orbitdb.open(this.dbAddress);
+      await db.load();
+      const all = db.all;
+      this.keys = [...Object.keys(all)];
     },
     async addEntry() {
-      const orbitdb = await this.$orbitdb
-      const db = await orbitdb.open(this.dbAddress)
-      await db.load()
-      console.log('add entry', db)
-      await db.put(this.key, this.value)
-      this.updateKeys()
+      const orbitdb = await this.$orbitdb;
+      const db = await orbitdb.open(this.dbAddress);
+      await db.load();
+      console.log("add entry", db);
+      await db.put(this.key, this.value);
+      this.updateKeys();
     },
     async readEntry() {
-      const orbitdb = await this.$orbitdb
-      const db = await orbitdb.open(this.dbAddress)
-      await db.load()
-      this.valueRead = db.get(this.keyRead)
-      console.log('read entry', { db, valueRead: this.valueRead })
+      const orbitdb = await this.$orbitdb;
+      const db = await orbitdb.open(this.dbAddress);
+      await db.load();
+      this.valueRead = db.get(this.keyRead);
+      console.log("read entry", { db, valueRead: this.valueRead });
     },
     async create() {
       const ipfsCidConfig = {
         version: 1,
-        hashAlg: 'sha2-256',
-        format: 'dag-cbor',
-      }
-      const ipfs = await this.$ipfs
-      const object = { text: this.content }
-      console.log(object)
-      const cid = await ipfs.dag.put(object, ipfsCidConfig)
-      this.cid = cid.toString('base58btc')
-      console.log({ cid: this.cid })
+        hashAlg: "sha2-256",
+        format: "dag-cbor",
+      };
+      const ipfs = await this.$ipfs;
+      const object = { text: this.content };
+      console.log(object);
+      const cid = await ipfs.dag.put(object, ipfsCidConfig);
+      this.cid = cid.toString("base58btc");
+      console.log({ cid: this.cid });
     },
     async read() {
-      const ipfs = await this.$ipfs
-      const read = await ipfs.dag.get(this.cid)
-      this.contentRead = read.value
+      const ipfs = await this.$ipfs;
+      const read = await ipfs.dag.get(this.cid);
+      this.contentRead = read.value;
+    },
+    async checkIncluded() {
+      const result = await fetch(
+        `${pinnerUrl}/includes?address=${this.dbAddress}`,
+        {
+          method: "GET",
+        }
+      );
+
+      const { includes } = await result.json();
+
+      this.includes = includes;
     },
     async getIpfsNodeInfo() {
       try {
         // Await for ipfs node instance.
-        const ipfs = await this.$ipfs
-        console.log(ipfs._ipfs)
+        const ipfs = await this.$ipfs;
+        console.log(ipfs._ipfs);
         // Call ipfs `id` method.
         // Returns the identity of the Peer.
-        const { agentVersion, id } = await ipfs.id()
-        this.agentVersion = agentVersion
-        this.id = id
+        const { agentVersion, id } = await ipfs.id();
+        this.agentVersion = agentVersion;
+        this.id = id;
         // Set successful status text.
-        this.status = 'Connected to IPFS =)'
+        this.status = "Connected to IPFS =)";
       } catch (err) {
         // Set error status text.
-        this.status = `Error: ${err}`
+        this.status = `Error: ${err}`;
       }
     },
   },
-}
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
